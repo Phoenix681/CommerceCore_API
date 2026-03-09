@@ -54,14 +54,16 @@ app.use('/api/orders', orderRoutes);
 
 app.use(errorHandler);
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("MongoDB Connected Successfully"))
 .catch((err) => console.log("MongoDB Connection Error:", err));
 
+if(process.env.NODE_ENV !== 'test'){
+    app.listen(PORT,()=>{
+        console.log(`Server is running on port ${PORT}`);
+    });
+}
 
-
-app.listen(PORT,()=>{
-    console.log(`Server is running on port ${PORT}`);
-})
+export default app;

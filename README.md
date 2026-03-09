@@ -7,9 +7,9 @@ A production-ready backend service engineered to handle e-commerce operations, s
 ## ⚡ Tech Stack
 * **Runtime & Framework:** Node.js, Express.js
 * **Database:** MongoDB, Mongoose
-* **Authentication:** JSON Web Tokens (JWT), bcryptjs
+* **Authentication & Security:** JSON Web Tokens (JWT), bcryptjs, express-validator
 * **Payment Gateway:** Stripe API, Stripe CLI (Webhooks)
-* **Testing:** Postman
+* **Testing:** Jest, Supertest, Postman
 
 ## 🚀 System Architecture & Key Features
 
@@ -18,6 +18,8 @@ A production-ready backend service engineered to handle e-commerce operations, s
 * **Stateless Authentication:** Implements a custom authentication middleware that protects private routes using encrypted JSON Web Tokens. Passwords are salted and hashed via bcrypt before ever touching the database.
 * **Relational Data Modeling:** Designed a normalized database schema mapping `Users`, `Products`, and `Orders` using MongoDB ObjectIds and Mongoose `.populate()` for seamless data retrieval.
 * **Modular Codebase:** Business logic is decoupled into distinct Express Routers (`userRoutes`, `productRoutes`, `orderRoutes`), ensuring high maintainability and scalable system design.
+* **Automated Integration Testing:** Comprehensive test suites built with Jest and Supertest to verify API endpoint reliability and database interactions in an isolated test environment.
+* **Centralized Error Handling & Validation:** Global error middleware intercepts and formats application exceptions (preventing stack trace leaks in production), while `express-validator` strictly sanitizes incoming request payloads at the perimeter.
 
 ## 📡 Core API Endpoints
 
@@ -56,4 +58,8 @@ A production-ready backend service engineered to handle e-commerce operations, s
 5. Start the development server:
    ```bash
    npm run dev
-   ```      
+   ```  
+6. Run the automated test suite:
+   ```bash
+   npm test
+   ```       
