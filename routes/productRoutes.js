@@ -1,20 +1,16 @@
 import express from 'express';
+import asyncHandler from 'express-async-handler';
 import Product from '../models/product.js';
+import protect from '../middleware/auth.js';
 import { check } from 'express-validator';
 import { validateRequest } from '../middleware/validation.js';
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
-    try{
-        const products = await Product.find({});
-        res.status(200).json(products);
-    }
-    catch(error){
-        console.error("Error fetching products:", error);
-        res.status(500).json({ error: "Failed to fetch products" });
-    }
-});
+router.get('/', asyncHandler(async (req, res) => {
+    const products = await Product.find({});
+    res.status(200).json(products);
+}));
 
 router.post(
     '/',
@@ -27,16 +23,11 @@ router.post(
         check('stock', 'Stock value must be a positive number').isFloat({ gt: 0 }),
     ],
     validateRequest,
-    async (req, res) => {
-    try{
+    asyncHandler(async (req, res) => {
         const newProduct = new Product(req.body);
         const saveProduct = await newProduct.save();
         res.status(201).json(saveProduct);
-    }
-    catch(error){
-        console.error("Error saving product:", error);
-        res.status(500).json({ error: "Failed to save product" });
-    }
-})
+    })
+)
 
 export default router;

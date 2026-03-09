@@ -1,4 +1,5 @@
 import express from 'express';
+import asyncHandler from 'express-async-handler';
 import Stripe from 'stripe';
 import Order from '../models/order.js';
 import Product from '../models/product.js';
@@ -21,12 +22,12 @@ router.post(
 
     ],
     validateRequest,
-    async(req,res)=>{
-    try{
-        const {orderItems} = req.body;
+    asyncHandler(async (req, res) => {
+        const { orderItems } = req.body;
 
-        if(!orderItems || orderItems.length === 0){
-            return res.status(400).json({message: "No order items Provided"});
+        if (!orderItems || orderItems.length === 0) {
+            res.status(400);
+            throw new Error("No order items Provided");
         }
 
         let calculatedTotal = 0;
@@ -37,8 +38,9 @@ router.post(
 
             const dbProduct = await Product.findById(item.product);
 
-            if(!dbProduct){
-                return res.status(400).json({message: `product not found: ${item.product}`});
+            if (!dbProduct) {
+                res.status(404);
+                throw new Error(`Product not found: ${item.product}`);
             }
 
             verifiedOrderItems.push({
@@ -51,7 +53,7 @@ router.post(
         }
 
         const newOrder = new Order({
-            user : req.user.userId,
+            user: req.user.userId,
             orderItems: verifiedOrderItems,
             totalAmount: calculatedTotal,
         });
@@ -62,55 +64,43 @@ router.post(
             message: "Order Successfully Added",
             order: saveOrder
         })
+    })
+);
+
+router.post('/create-checkout-session', protect, asyncHandler(async (req, res) => {
+    const { orderId } = req.body;
+
+    const order = await Order.findById(orderId).populate('orderItems.product');
+
+    if (!order) {
+        res.status(404);
+        throw new Error("Order not found");
     }
-    catch(error){
-        res.status(400).json({message: "Order not added. Server issue",error: error.message});
-    }
-})
 
-router.post('/create-checkout-session', protect, async (req, res) => {
-    try {
-        const { orderId } = req.body;
-
-        const order = await Order.findById(orderId).populate('orderItems.product');
-
-        if (!order) {
-            return res.status(404).json({ message: "Order not found" });
-        }
-
-        const lineItems = order.orderItems.map((item) => {
-            return {
-                price_data: {
-                    currency: 'usd',
-                    product_data: {
-                        name: item.product.name,
-                    },
-                    unit_amount: item.price * 100,
+    const lineItems = order.orderItems.map((item) => {
+        return {
+            price_data: {
+                currency: 'usd',
+                product_data: {
+                    name: item.product.name,
                 },
-                quantity: item.quantity,
-            };
-        });
+                unit_amount: item.price * 100,
+            },
+            quantity: item.quantity,
+        };
+    });
 
-        
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: lineItems,
-            mode: 'payment',
-            metadata: { orderId: order._id.toString() },
-    
-            success_url: 'http://localhost:5000/success', 
-            cancel_url: 'http://localhost:5000/cancel',
-        });
 
-        res.status(200).json({ 
-            message: "Stripe session created successfully",
-            id: session.id, 
-            url: session.url 
-        });
+    const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: lineItems,
+        mode: 'payment',
+        metadata: { orderId: order._id.toString() },
+        success_url: `${process.env.CLIENT_URL}/success.html`,
+        cancel_url: `${process.env.CLIENT_URL}/cancel.html`,
+    });
 
-    } catch (error) {
-        res.status(500).json({ message: "Stripe Error", error: error.message });
-    }
-});
+    res.json({ id: session.id });
+}));
 
 export default router;

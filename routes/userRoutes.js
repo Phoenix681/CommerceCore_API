@@ -1,4 +1,5 @@
 import express from 'express';
+import asyncHandler from 'express-async-handler';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/user.js';
@@ -19,44 +20,36 @@ router.post(
         check('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 })
     ],
     validateRequest,
-    async(req,res)=>{
-    try{
-        const {fullname, email, password } = req.body;
-        // console.log("email recieved",email);
-        
-        const existingUser = await User.findOne({email});
-        // console.log("email recieved",existingUser);
-        if(existingUser){
-            return res.status(400).json({message : "User already exist with this email"});
+    asyncHandler(async (req, res) => {
+        const { fullname, email, password } = req.body;
+
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            res.status(400);
+            throw new Error("User already exist with this email");
         }
 
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password,salt);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
         const newUser = new User({
             fullname,
             email,
-            password : hashedPassword
+            password: hashedPassword
         });
 
         const savedUser = await newUser.save();
 
-        res.status(200).json({
+        res.status(201).json({
             message: "User registered Successfully!",
             user: {
-                _id : savedUser._id,
-                fullname : savedUser.fullname,
-                email : savedUser.email
+                _id: savedUser._id,
+                fullname: savedUser.fullname,
+                email: savedUser.email
             }
-        })
-    }
-    catch(error){
-        res.status(400).json({
-            message : "Server Error",
-            error : error.message
-        })
-    }
-});
+        });
+    })
+);
 
 router.post(
     '/login',
@@ -65,54 +58,32 @@ router.post(
         check('password', 'Password is required').exists()
     ],
     validateRequest,
-    async(req,res)=>{
-    try{
-        const {email,password} = req.body;
+    asyncHandler(async (req, res) => {
+        const { email, password } = req.body;
 
-        const user = await User.findOne({email});
-        if(!user){
-            return res.status(400).json({message : "Invalid email or password"});
-        }
+        const user = await User.findOne({ email });
 
-        const isMatch = await bcrypt.compare(password,user.password);
-        if(!isMatch){
-            return res.status(400).json({message : "Invalid email or passord"});
-        }
-
-        const token = jwt.sign(
-            {userId: user._id},
-            process.env.JWT_SECRET,
-            {expiresIn: '1d'}
-        )
-
-        res.status(200).json({
-            message: "Login successful!",
-            token: token,
-            user: {
-                _id: user._id,
-                fullname: user.fullname,
-                email: user.email
-            }
-        });
-    }
-    catch(error){
-        res.status(400).json({message: "Server Error",error: error.message});
-    }
-})
-
-
-router.get('/profile', protect, async (req, res) => {
-    try {
-        const user = await User.findById(req.user.userId).select('-password');
-        
-        if (user) {
-            res.status(200).json(user);
+        if (user && (await bcrypt.compare(password, user.password))) {
+            const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+            res.json({
+                message: "Logged in successfully",
+                token
+            });
         } else {
-            res.status(404).json({ message: "User not found" });
+            res.status(401);
+            throw new Error("Invalid email or password");
         }
-    } catch (error) {
-        res.status(500).json({ message: "Server Error", error: error.message });
+    })
+);
+
+router.get('/profile', protect, asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user.userId).select('-password');
+    if (user) {
+        res.json(user);
+    } else {
+        res.status(404);
+        throw new Error('User not found');
     }
-});
+}));
 
 export default router;
