@@ -13,15 +13,15 @@ A production-ready backend service engineered to handle e-commerce operations, s
 
 ## 🚀 System Architecture & Key Features
 
-* **Secure Payment Flow:** Integrates Stripe Checkout. To prevent client-side data tampering, cart totals are calculated strictly on the server by dynamically querying live database pricing before generating payment sessions.
-* **Cryptographic Webhooks:** Utilizes Express raw body parsing to intercept and cryptographically verify Stripe event signatures, automating real-time order status updates in the database.
-* **Stateless Authentication:** Implements a custom authentication middleware that protects private routes using encrypted JSON Web Tokens. Passwords are salted and hashed via bcrypt before ever touching the database.
-* **Relational Data Modeling:** Designed a normalized database schema mapping `Users`, `Products`, and `Orders` using MongoDB ObjectIds and Mongoose `.populate()` for seamless data retrieval.
-* **Modular Codebase:** Business logic is decoupled into distinct Express Routers (`userRoutes`, `productRoutes`, `orderRoutes`), ensuring high maintainability and scalable system design.
-* **Automated Integration Testing:** Comprehensive test suites built with Jest and Supertest to verify API endpoint reliability and database interactions in an isolated test environment.
-* **Centralized Error Handling & Validation:** Global error middleware intercepts and formats application exceptions (preventing stack trace leaks in production), while `express-validator` strictly sanitizes incoming request payloads at the perimeter.
+### 🛡️ Security & Reliability
+* **Centralized Error Handling & Validation:** Global error middleware intercepts exceptions to prevent stack trace leaks, while `express-validator` strictly sanitizes incoming payloads at the perimeter.
+* **Automated Integration Testing:** Comprehensive test suites built with Jest and Supertest to verify API endpoint reliability and database interactions in an isolated environment.
+* **Stateless Authentication:** Implements custom middleware that protects private routes using encrypted JSON Web Tokens (JWT) and bcrypt password hashing.
 
-## 📡 Core API Endpoints
+### ⚙️ Core Infrastructure
+* **Secure Payment Flow:** Integrates Stripe Checkout, calculating cart totals strictly on the server by dynamically querying live database pricing to prevent client-side tampering.
+* **Cryptographic Webhooks:** Utilizes Express raw body parsing to intercept and cryptographically verify Stripe event signatures for real-time order status updates.
+* **Relational Data Modeling:** Designed a normalized database schema mapping `Users`, `Products`, and `Orders` using MongoDB ObjectIds and Mongoose `.populate()` for seamless data retrieval.
 
 | HTTP Method | Endpoint | Description | Auth Required |
 | :--- | :--- | :--- | :--- |
