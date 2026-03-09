@@ -4,6 +4,8 @@ import Order from '../models/order.js';
 import Product from '../models/product.js';
 import protect from '../middleware/auth.js';
 import dotenv from 'dotenv';
+import { check } from 'express-validator';
+import { validateRequest } from '../middleware/validation.js';
 
 dotenv.config();
 
@@ -11,7 +13,15 @@ const router = express.Router();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-router.post('/',protect,async(req,res)=>{
+router.post(
+    '/',
+    protect,
+    [
+        check('orderItems', 'No order items provided').isArray({ min: 1 })
+
+    ],
+    validateRequest,
+    async(req,res)=>{
     try{
         const {orderItems} = req.body;
 

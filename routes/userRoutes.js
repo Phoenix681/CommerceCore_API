@@ -4,12 +4,22 @@ import jwt from 'jsonwebtoken';
 import User from '../models/user.js';
 import protect from '../middleware/auth.js';
 import dotenv from 'dotenv';
+import { check } from 'express-validator';
+import { validateRequest } from '../middleware/validation.js';
 
 dotenv.config();
 
 const router = express.Router();
 
-router.post('/register',async(req,res)=>{
+router.post(
+    '/register',
+    [
+        check('fullname', 'Name is required').not().isEmpty(),
+        check('email', 'Please include a valid email').isEmail(),
+        check('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 })
+    ],
+    validateRequest,
+    async(req,res)=>{
     try{
         const {fullname, email, password } = req.body;
         // console.log("email recieved",email);
@@ -48,7 +58,14 @@ router.post('/register',async(req,res)=>{
     }
 });
 
-router.post('/login',async(req,res)=>{
+router.post(
+    '/login',
+    [
+        check('email', 'Please include a valid email').isEmail(),
+        check('password', 'Password is required').exists()
+    ],
+    validateRequest,
+    async(req,res)=>{
     try{
         const {email,password} = req.body;
 
